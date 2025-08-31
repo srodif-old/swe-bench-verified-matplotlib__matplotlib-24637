@@ -609,3 +609,38 @@ def test_svg_font_string(font_str, include_generic):
 
         assert font_info == f"{size}px {font_str}"
     assert text_count == len(ax.texts)
+
+
+def test_annotationbbox_gid():
+    """Test that AnnotationBbox gid appears in output SVG."""
+    import numpy as np
+    from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+    
+    fig, ax = plt.subplots()
+    
+    # Create a simple image array
+    arr_img = np.random.rand(10, 10, 3)
+    
+    xy = [0.3, 0.55]
+    imagebox = OffsetImage(arr_img, zoom=0.1)
+    imagebox.image.axes = ax
+    
+    ab = AnnotationBbox(imagebox, xy,
+                        xybox=(120., -80.),
+                        xycoords='data',
+                        boxcoords="offset points",
+                        pad=0.5,
+                        arrowprops=dict(
+                            arrowstyle="->",
+                            connectionstyle="angle,angleA=0,angleB=90,rad=3"))
+    
+    test_gid = 'My_annotation_test_gid'
+    ab.set_gid(test_gid)
+    ax.add_artist(ab)
+    
+    with BytesIO() as fd:
+        fig.savefig(fd, format='svg')
+        buf = fd.getvalue().decode()
+    
+    # The gid should appear in the SVG output
+    assert test_gid in buf
